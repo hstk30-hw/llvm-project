@@ -10914,6 +10914,26 @@ SDValue AArch64TargetLowering::ReconstructShuffle(SDValue Op,
 
   SDValue Shuffle = DAG.getVectorShuffle(ShuffleVT, dl, ShuffleOps[0],
                                          ShuffleOps[1], Mask);
+  if (DAG.getDataLayout().isBigEndian()) {
+    EVT SrcEltTy = ShuffleVT.getVectorElementType();
+    EVT DstEltTy = VT.getVectorElementType();
+    if (SrcEltTy != DstEltTy) {
+      unsigned REVOp = 0;
+      unsigned DstTypeSize = DstEltTy.getFixedSizeInBits();
+      unsigned SrcTypeSize = SrcEltTy.getFixedSizeInBits();
+      if (std::max(DstTypeSize, SrcTypeSize) == 16) {
+        REVOp = AArch64ISD::REV16;
+      } else if (std::max(DstTypeSize, SrcTypeSize) == 32) {
+        REVOp = AArch64ISD::REV32;
+      } else if (std::max(DstTypeSize, SrcTypeSize) == 64) {
+        REVOp = AArch64ISD::REV64;
+      }
+      if (REVOp) {
+        Shuffle = DAG.getNode(REVOp, dl, ShuffleVT, Shuffle);
+      }
+    }
+  }
+
   SDValue V = DAG.getNode(ISD::BITCAST, dl, VT, Shuffle);
 
   LLVM_DEBUG(dbgs() << "Reshuffle, creating node: "; Shuffle.dump();

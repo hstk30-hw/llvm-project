@@ -47,6 +47,7 @@
 #include "llvm/IR/Constant.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DebugLoc.h"
+#include "llvm/IR/DiagnosticInfo.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/InstrTypes.h"
@@ -2798,6 +2799,9 @@ bool GVNPass::processBlock(BasicBlock *BB) {
     for (auto *I : InstrsToErase) {
       assert(I->getParent() == BB && "Removing instruction from wrong block?");
       LLVM_DEBUG(dbgs() << "GVN removed: " << *I << '\n');
+      auto &Ctx = I->getContext();
+      Twine Msg("fail when -save-temps");
+      Ctx.diagnose(DiagnosticInfoMisExpect(I, Msg));
       salvageKnowledge(I, AC);
       salvageDebugInfo(*I);
       removeInstruction(I);

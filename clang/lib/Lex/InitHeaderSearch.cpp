@@ -181,6 +181,12 @@ bool InitHeaderSearch::AddUnmappedPath(const Twine &Path, IncludeDirGroup Group,
   if (Verbose)
     llvm::errs() << "ignoring nonexistent directory \""
                  << MappedPathStr << "\"\n";
+
+  if (!MappedPathStr.startswith("/usr/include") &&
+      !MappedPathStr.startswith("/usr/local/include")) {
+    Headers.getDiags().Report(diag::warn_missing_include_dirs)
+        << MappedPathStr;
+  }
   return false;
 }
 
